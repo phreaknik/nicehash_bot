@@ -21,17 +21,15 @@ import json
 import pprint
 import requests
 import traceback
+import toml
 from datetime import datetime, timedelta
 pp = pprint.PrettyPrinter(indent=4)
 
-## Begin User Config
-
-# May be "slow", "medium", or "fast".  Controls the rate to raise the price
-#   slow gets a better price, but will have down time
-#   fast pays more, but has less down time
-PRICE_ADJUST_RATE = "fast"
-
-## End User Config
+## Load user config
+config = toml.load("config.toml")
+API_ID = config['nicehash']['API_ID']
+API_KEY = config['nicehash']['API_KEY']
+PRICE_ADJUST_RATE = config['nicehash']['PRICE_ADJUST_RATE']
 
 
 
@@ -47,6 +45,12 @@ elif PRICE_ADJUST_RATE == "fast":
     MAX_INCREASE = 0.0005   # Maximum amount to increase at once
     TARGET_MIN_ADD = 0.0001 # Amount to set order price over the absolute minimum 
     LOOP_INTERVAL = 15      # Sleep this long between control loop runs
+else:
+    print("Error:  Missing config for nicehash PRICE_ADJUST_RATE")
+    print("  Make sure PRICE_ADJUST_RATE is set to either \"slow\", \"medium\", or \"fast\" in config.toml")
+    print("{}".format(str(e)))
+    print("  ")
+    sys.exit(1)
 
 
 UPDATE_INTERVAL = timedelta(minutes = 10)
@@ -67,7 +71,7 @@ ALGOS = {
     }
 
 
-# Get locatio name from number
+# Get location name from number
 def getLocationName(loc_num):
     if type(loc_num) == "String":
         loc_num = int(loc_num)
@@ -106,21 +110,9 @@ def call_nicehash_api(method, args):
     return result
 
 
-
 print("#################")
 print("##  Starting Nicehash Bot")
 print("##  ")
-
-try:
-    API_ID = os.environ["NICEHASH_API_ID"]
-    API_KEY = os.environ["NICEHASH_API_KEY"]
-except Exception as e:
-    print("Error:  Set environment variable NICEHASH_API_ID and NICEHASH_API_KEY")
-    print("  export NICEHASH_API_ID=\"xxx\"")
-    print("  export NICEHASH_API_KEY=\"yyy\"")
-    print("{}".format(str(e)))
-    print("  ")
-    sys.exit(1)
 
 while True:
     # Get all current orders
